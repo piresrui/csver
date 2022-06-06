@@ -35,6 +35,8 @@ pub struct Transaction {
     pub tx: TxID,
     /// amount of transaction, only available for Deposit and Withdrawal tx
     pub amount: Amount,
+    #[serde(skip_serializing)]
+    pub disputed: bool,
 }
 
 impl Default for Transaction {
@@ -44,6 +46,7 @@ impl Default for Transaction {
             client: 0,
             tx: 0,
             amount: 0.0,
+            disputed: false,
         }
     }
 }

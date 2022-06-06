@@ -14,9 +14,6 @@ pub struct Account {
     pub total: Amount,
     /// is client account locked
     pub locked: bool,
-    /// client transaction ids
-    #[serde(skip_serializing)]
-    pub txs: Vec<TxID>,
 }
 
 impl Account {
@@ -27,11 +24,6 @@ impl Account {
             held: 0.0,
             total: 0.0,
             locked: false,
-            txs: Vec::default(),
         }
-    }
-
-    pub fn add_tx(&mut self, tx: Transaction) {
-        self.txs.push(tx.tx);
     }
 }

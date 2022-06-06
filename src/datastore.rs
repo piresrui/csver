@@ -1,75 +1,13 @@
-use serde::{Deserialize, Serialize};
+use crate::domain::datastore::{DataStore, DataStoreError, DataStoreResult};
+use crate::model::account::Account;
+use crate::model::transaction::{ClientID, Transaction, TxID};
 use std::collections::hash_map::{Entry, HashMap};
-use thiserror::Error;
 
-type TxID = u32;
-type ClientID = u16;
-type Amount = f32;
-
-#[derive(Debug, Deserialize, Clone)]
-#[serde(rename_all = "lowercase")]
-enum TxType {
-    Deposit,
-    Withdrawal,
-    Dispute,
-    Resolve,
-    ChargeBack,
-}
-
-#[derive(Debug, Deserialize, Clone)]
-struct Transaction {
-    #[serde(rename = "type")]
-    tx_type: TxType,
-    client: ClientID,
-    tx: TxID,
-    amount: Amount,
-}
-
-impl Default for Transaction {
-    fn default() -> Self {
-        Self {
-            tx_type: TxType::Deposit,
-            client: 0,
-            tx: 0,
-            amount: 0.0,
-        }
-    }
-}
-
-#[derive(Debug, Deserialize, Serialize, Clone)]
-struct Account {
-    client: ClientID,
-    available: Amount,
-    held: Amount,
-    total: Amount,
-    locked: bool,
-    #[serde(skip_serializing)]
-    txs: Vec<TxID>,
-}
-
-impl Account {
-    fn new(id: ClientID) -> Self {
-        Account {
-            client: id,
-            available: 0.0,
-            held: 0.0,
-            total: 0.0,
-            locked: false,
-            txs: Vec::default(),
-        }
-    }
-
-    fn add_tx(&mut self, tx: Transaction) {
-        self.txs.push(tx.tx);
-    }
-}
-
-struct TxEngine<S: DataStore> {
-    datastore: S,
-}
-
+/// MemStore is an in memory datastore
 struct MemStore {
+    /// accounts contains a map of client id to account
     accounts: HashMap<ClientID, Account>,
+    /// txs contains a map of transaction id to transaction
     txs: HashMap<TxID, Transaction>,
 }
 
@@ -82,24 +20,6 @@ impl MemStore {
     }
 }
 
-#[derive(Error, Debug)]
-enum DataStoreError {
-    #[error("Transaction already exists in store")]
-    TxAlreadyExists,
-    #[error("Transaction not found in store")]
-    TxNotFound,
-}
-
-type DataStoreResult<T> = Result<T, DataStoreError>;
-
-trait DataStore {
-    fn get_tx(&self, id: TxID) -> DataStoreResult<Transaction>;
-    fn insert_tx(&mut self, tx: Transaction) -> DataStoreResult<()>;
-    fn get_account(&self, id: ClientID) -> DataStoreResult<Account>;
-}
-
-trait Engine {}
-
 impl DataStore for MemStore {
     fn get_tx(&self, id: TxID) -> DataStoreResult<Transaction> {
         match self.txs.get(&id).cloned() {
@@ -108,35 +28,87 @@ impl DataStore for MemStore {
         }
     }
 
-    fn insert_tx(&mut self, tx: Transaction) -> DataStoreResult<()> {
+    fn insert_tx(&mut self, tx: Transaction) -> DataStoreResult<Transaction> {
         match self.txs.entry(tx.tx) {
             Entry::Vacant(v) => {
-                v.insert(tx);
-                Ok(())
+                v.insert(tx.clone());
+                Ok(tx)
             }
             Entry::Occupied(_) => Err(DataStoreError::TxAlreadyExists),
         }
     }
 
     fn get_account(&self, id: ClientID) -> DataStoreResult<Account> {
-        todo!()
+        match self.accounts.get(&id).cloned() {
+            Some(acc) => Ok(acc),
+            None => Err(DataStoreError::AccountNotFound),
+        }
+    }
+
+    fn insert_account(&mut self, acc: Account) -> DataStoreResult<Account> {
+        match self.accounts.entry(acc.client) {
+            Entry::Vacant(v) => {
+                v.insert(acc.clone());
+                Ok(acc)
+            }
+            Entry::Occupied(_) => Err(DataStoreError::AccountAlreadyExists),
+        }
     }
 }
-
-impl<S: DataStore> Engine for TxEngine<S> {}
 
 mod tests {
     use super::*;
 
     #[test]
     fn test_insert_tx_account() {
-        let acc = Account::new(0);
         let mut store = MemStore::new();
         let tx = Transaction::default();
 
-        store.insert_tx(tx.clone());
+        let r = store.insert_tx(tx.clone());
+        assert!(r.is_ok());
+        assert_eq!(tx, r.unwrap());
 
         let got_tx = store.get_tx(tx.tx);
         assert_eq!(0, got_tx.unwrap().tx);
+    }
+
+    #[test]
+    fn test_insert_tx_already_exists() {
+        let mut store = MemStore::new();
+        let tx = Transaction::default();
+
+        let mut r = store.insert_tx(tx.clone());
+        assert!(r.is_ok());
+        assert_eq!(tx, r.unwrap());
+
+        r = store.insert_tx(tx.clone());
+        assert!(r.is_err());
+        assert_eq!(r.unwrap_err(), DataStoreError::TxAlreadyExists);
+    }
+
+    #[test]
+    fn test_insert_account() {
+        let mut store = MemStore::new();
+        let acc = Account::new(0);
+
+        let r = store.insert_account(acc.clone());
+        assert!(r.is_ok());
+        assert_eq!(acc, r.unwrap());
+
+        let got_acc = store.get_account(0);
+        assert_eq!(acc, got_acc.unwrap());
+    }
+    #[test]
+    fn test_insert_account_already_exists() {
+        let mut store = MemStore::new();
+        let acc = Account::new(0);
+
+        let mut r = store.insert_account(acc.clone());
+        assert!(r.is_ok());
+        assert_eq!(acc, r.unwrap());
+
+        r = store.insert_account(acc.clone());
+        assert!(r.is_err());
+        assert_eq!(r.unwrap_err(), DataStoreError::AccountAlreadyExists);
     }
 }

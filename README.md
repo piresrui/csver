@@ -5,7 +5,7 @@ Rust transaction processor.
 
 ## Design
 
-__csver__ was design with modulatiry in mind. Traits were defined for the __processor__ and __datastore__, so alternate implementations can be plugged in.
+__csver__ was designed with modulatiry in mind. Traits were defined for a __processor__ and __datastore__, so alternate implementations can be plugged in.
 
 `Processor` module stipulates behavior of system as transactions are processed, and should contain all the business logic.
 
@@ -39,7 +39,7 @@ Very basic error handling is done, I defined Error types but they could and shou
 
 ### 2. Async support
 
-Making use of `tokyo` here would have been my prefered choice, but I felt it would overcomplicate what should be a simple demonstration. Ideally the defined traits would be prepared for async support. E.g `MemStore` should make use of Mutexes and Arc's to be concurency safe.
+Making use of `tokyo` here would have been my prefered choice, but I felt it would overcomplicate what should be a simple demonstration. Ideally the defined traits would be prepared for async support. E.g `MemStore` should make use of Mutexes and Arc's to be concurency safe, or just plugin an existing DBMS.
 
 ### 3. Input streams
 

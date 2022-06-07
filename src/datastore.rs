@@ -106,11 +106,54 @@ mod tests {
     }
 
     #[test]
-    fn test_insert_account() {
+    fn test_insert_account_with_get() {
         let mut store = MemStore::new();
         let acc = Account::new(0);
 
         let got_acc = store.get_account(0);
         assert_eq!(acc, got_acc.unwrap());
+    }
+
+    #[test]
+    fn test_get_tx_fail() {
+        let store = MemStore::new();
+        let tx = Transaction::default();
+
+        let got_tx = store.get_tx(tx.tx);
+        assert!(got_tx.is_err());
+        assert_eq!(DataStoreError::TxNotFound, got_tx.unwrap_err());
+    }
+    #[test]
+    fn test_mark_disputed() {
+        let mut store = MemStore::new();
+        let tx = Transaction::default();
+        let r = store.insert_tx(tx.clone());
+        assert!(r.is_ok());
+        assert_eq!(tx, r.unwrap());
+
+        assert!(store.mark_disputed(tx.tx).is_ok());
+
+        let got_tx = store.get_tx(tx.tx);
+        assert!(got_tx.is_ok());
+        assert!(got_tx.unwrap().disputed);
+    }
+
+    #[test]
+    fn test_mark_resolved() {
+        let mut store = MemStore::new();
+        let tx = Transaction::default();
+        let r = store.insert_tx(tx.clone());
+        assert!(r.is_ok());
+        assert_eq!(tx, r.unwrap());
+
+        assert!(store.mark_disputed(tx.tx).is_ok());
+
+        let mut got_tx = store.get_tx(tx.tx);
+        assert!(got_tx.is_ok());
+        assert!(got_tx.unwrap().disputed);
+        assert!(store.mark_resolved(tx.tx).is_ok());
+        got_tx = store.get_tx(tx.tx);
+        assert!(got_tx.is_ok());
+        assert!(!got_tx.unwrap().disputed);
     }
 }

@@ -2,7 +2,8 @@ use crate::model::transaction::{Amount, ClientID};
 use decimal_rs::Decimal;
 use serde::{Deserialize, Serialize};
 
-const DISPLAY_PRECISION: i16 = 4;
+/// Decimal precision
+const PRECISION: i16 = 4;
 
 /// Account contains the state for a client account
 #[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
@@ -30,9 +31,10 @@ impl Account {
         }
     }
 
+    /// Set required scale for decimal
     pub fn scale(&mut self) {
-        self.available.normalize_to_scale(DISPLAY_PRECISION);
-        self.held.normalize_to_scale(DISPLAY_PRECISION);
-        self.total.normalize_to_scale(DISPLAY_PRECISION);
+        self.available = self.available.normalize_to_scale(PRECISION);
+        self.held = self.held.normalize_to_scale(PRECISION);
+        self.total = self.total.normalize_to_scale(PRECISION);
     }
 }

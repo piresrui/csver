@@ -11,10 +11,7 @@ use processor::TxProcessor;
 use std::error::Error;
 
 fn main() {
-    match process() {
-        Ok(_) => {}
-        Err(e) => println!("{}", e),
-    }
+    let _ = process();
 }
 
 fn process() -> Result<(), Box<dyn Error>> {
@@ -24,8 +21,9 @@ fn process() -> Result<(), Box<dyn Error>> {
     let mut reader = reader_writer::csv_reader(args[1].clone());
     for result in reader.deserialize() {
         let tx: Transaction = result?;
-        if let Err(e) = processor.process(tx) {
-            println!("Error processing transaction - {}", e);
+        if let Err(_) = processor.process(tx) {
+            // Do not print as this may break output
+            // println!("Error processing transaction - {}", e);
         }
     }
 
@@ -34,8 +32,9 @@ fn process() -> Result<(), Box<dyn Error>> {
     accs.into_iter().for_each(|account| {
         let mut acc = account.clone();
         acc.scale();
-        if let Err(e) = writer.serialize(acc) {
-            println!("Error serializing - {}", e);
+        if let Err(_) = writer.serialize(acc) {
+            // Do not print as this may break output
+            //println!("Error serializing - {}", e);
         }
     });
     Ok(())

@@ -37,6 +37,7 @@ pub struct Transaction {
     /// amount of transaction, only available for Deposit and Withdrawal tx
     #[serde(default)]
     pub amount: Option<Amount>,
+    /// Transaction is disputed or not
     #[serde(skip_deserializing)]
     pub disputed: bool,
 }

@@ -22,4 +22,5 @@ pub trait DataStore {
     fn update_account(&mut self, acc: Account) -> DataStoreResult<()>;
     fn mark_disputed(&mut self, id: TxID) -> DataStoreResult<()>;
     fn mark_resolved(&mut self, id: TxID) -> DataStoreResult<()>;
+    fn get_accounts(&self) -> DataStoreResult<Vec<Account>>;
 }

@@ -68,8 +68,13 @@ impl DataStore for MemStore {
             None => Ok(()),
         }
     }
+
+    fn get_accounts(&self) -> DataStoreResult<Vec<Account>> {
+        Ok(self.accounts.values().cloned().collect::<Vec<_>>())
+    }
 }
 
+#[cfg(test)]
 mod tests {
     use super::*;
 

@@ -18,4 +18,6 @@ pub type ProcessorResult<T> = Result<T, ProcessorError>;
 pub trait Processor {
     // Processes a given transaction
     fn process(&mut self, tx: Transaction) -> ProcessorResult<Account>;
+    // Returns iterator for accounts
+    fn accounts(&self) -> ProcessorResult<Vec<Account>>;
 }

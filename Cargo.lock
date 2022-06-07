@@ -41,9 +41,35 @@ name = "csver"
 version = "0.1.0"
 dependencies = [
  "csv",
+ "decimal-rs",
  "serde",
  "thiserror",
 ]
+
+[[package]]
+name = "decimal-rs"
+version = "0.1.38"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fa3ab4f7b3df4f77b57f228261f2761db6d9bb0b803d5b9d5dee3d84f9a67439"
+dependencies = [
+ "ethnum",
+ "fast-float",
+ "serde",
+ "stack-buf",
+ "thiserror",
+]
+
+[[package]]
+name = "ethnum"
+version = "1.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f6f4ea34740bd5042b688060cbff8b010f5a324719d5e111284d648035bccc47"
+
+[[package]]
+name = "fast-float"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "95765f67b4b18863968b4a1bd5bb576f732b29a4a28c7cd84c09fa3e2875f33c"
 
 [[package]]
 name = "itoa"
@@ -112,6 +138,12 @@ dependencies = [
  "quote",
  "syn",
 ]
+
+[[package]]
+name = "stack-buf"
+version = "0.1.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e7386b49cb287f6fafbfd3bd604914bccb99fb8d53483f40e1ecfda5d45f3370"
 
 [[package]]
 name = "syn"

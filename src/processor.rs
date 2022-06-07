@@ -1,4 +1,3 @@
-use crate::datastore::MemStore;
 use crate::domain::datastore::DataStore;
 use crate::domain::processor::{Processor, ProcessorError, ProcessorResult};
 use crate::model::account::Account;
@@ -26,6 +25,10 @@ impl<S: DataStore> Processor for TxProcessor<S> {
         self.datastore.update_account(acc.clone()).unwrap();
         Ok(acc)
     }
+
+    fn accounts(&self) -> ProcessorResult<Vec<Account>> {
+        Ok(self.datastore.get_accounts().unwrap())
+    }
 }
 
 impl<S: DataStore> TxProcessor<S> {
@@ -44,48 +47,58 @@ impl<S: DataStore> TxProcessor<S> {
     }
 
     fn deposit(&self, account: &mut Account, tx: &Transaction) -> ProcessorResult<()> {
-        account.available += tx.amount;
-        account.total += tx.amount;
+        account.available += tx.amount.unwrap();
+        account.total += tx.amount.unwrap();
         Ok(())
     }
 
     fn withdrawal(&self, account: &mut Account, tx: &Transaction) -> ProcessorResult<()> {
-        if account.available < tx.amount {
+        if account.available < tx.amount.unwrap() {
             return Err(ProcessorError::NoFunds);
         }
 
-        account.available -= tx.amount;
-        account.total -= tx.amount;
+        account.available -= tx.amount.unwrap();
+        account.total -= tx.amount.unwrap();
 
         Ok(())
     }
 
     fn dispute(&mut self, account: &mut Account, tx: &Transaction) -> ProcessorResult<()> {
-        account.available -= tx.amount;
-        account.held += tx.amount;
+        let tx = self.datastore.get_tx(tx.tx).unwrap();
+        account.available -= tx.amount.unwrap();
+        account.held += tx.amount.unwrap();
 
-        self.datastore.mark_disputed(tx.tx);
+        if let Err(e) = self.datastore.mark_disputed(tx.tx) {
+            print!("Failed to mark tx as disputed - {}", e)
+        }
         Ok(())
     }
 
     fn resolve(&mut self, account: &mut Account, tx: &Transaction) -> ProcessorResult<()> {
-        account.available += tx.amount;
-        account.held -= tx.amount;
+        let tx = self.datastore.get_tx(tx.tx).unwrap();
+        account.available += tx.amount.unwrap();
+        account.held -= tx.amount.unwrap();
 
-        self.datastore.mark_resolved(tx.tx);
+        if let Err(e) = self.datastore.mark_resolved(tx.tx) {
+            print!("Failed to mark tx as resolved - {}", e)
+        }
         Ok(())
     }
 
     fn chargeback(&mut self, account: &mut Account, tx: &Transaction) -> ProcessorResult<()> {
-        account.held -= tx.amount;
-        account.total -= tx.amount;
+        let tx = self.datastore.get_tx(tx.tx).unwrap();
+        account.held -= tx.amount.unwrap();
+        account.total -= tx.amount.unwrap();
         account.locked = true;
 
-        self.datastore.mark_resolved(tx.tx);
+        if let Err(e) = self.datastore.mark_resolved(tx.tx) {
+            print!("Failed to mark tx as resolved - {}", e)
+        }
         Ok(())
     }
 }
 
+#[cfg(tests)]
 mod tests {
     use super::*;
     #[test]
@@ -94,11 +107,11 @@ mod tests {
         let p = TxProcessor::new(ds);
         let mut acc = Account::new(0);
         let mut tx = Transaction::default();
-        tx.amount = 10.0;
+        tx.amount = decimal_rs::Decimal::from(10);
 
         let r = p.deposit(&mut acc, &tx);
         assert!(r.is_ok());
-        assert_eq!(10.0, acc.total);
+        assert_eq!(tx.amount, acc.total);
     }
     #[test]
     fn test_withdrawl() {
@@ -106,14 +119,14 @@ mod tests {
         let p = TxProcessor::new(ds);
         let mut acc = Account::new(0);
         let mut tx = Transaction::default();
-        tx.amount = 10.0;
+        tx.amount = decimal_rs::Decimal::from(10);
         let r = p.deposit(&mut acc, &tx);
         assert!(r.is_ok());
-        assert_eq!(10.0, acc.total);
+        assert_eq!(tx.amount, acc.total);
 
         let r = p.withdrawal(&mut acc, &tx);
         assert!(r.is_ok());
-        assert_eq!(0.0, acc.total);
+        assert_eq!(tx.amount, acc.total);
     }
     #[test]
     fn test_dispute() {
@@ -148,5 +161,19 @@ mod tests {
         assert!(result.is_ok());
 
         assert!(!p.datastore.get_tx(tx.tx).unwrap().disputed);
+    }
+
+    #[test]
+    fn test_process() {
+        let ds = MemStore::new();
+        let mut p = TxProcessor::new(ds);
+        let mut tx = Transaction::default();
+        tx.amount = decimal_rs::Decimal::from(10);
+
+        let r = p.process(tx);
+        assert!(r.is_ok());
+        let acc = r.unwrap();
+        assert_eq!(acc.client, 0);
+        assert_eq!(acc.available, decimal_rs::Decimal::from(10));
     }
 }

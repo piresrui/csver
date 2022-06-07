@@ -9,3 +9,4 @@ edition = "2018"
 csv = "1.1.6"
 serde = { version = "^1.0.55", features = ["derive"] }
 thiserror = "1.0.31"
+decimal-rs = { version = "0.1.38", features = ["serde"] }

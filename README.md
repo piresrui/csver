@@ -9,7 +9,7 @@ __csver__ was designed with modulatiry in mind. Traits were defined for a __proc
 
 `Processor` module stipulates behavior of system as transactions are processed, and should contain all the business logic.
 
-`DataStore` module should be a blanked implementation of a simple CRUD database for transactions and accounts.
+`DataStore` module should be a blanket implementation of a simple CRUD database for transactions and accounts.
 
 ![Design](/docs/version_1.jpg)
 
@@ -25,7 +25,7 @@ In the `src/model` module, we can find basic model definitions for `Account` and
 
 I chose to keep it as simple as possible while still maintainig some structure beyond a script.
 
-`MemStore` was implemented as a in memory store, without any support for multithreading/async.
+`MemStore` was implemented as a in-memory store, without any support for multithreading/async.
 
 `TxProcessor` was also implemented without multuthreading/async in mind.
 
@@ -47,6 +47,6 @@ Currently input stream process is very basic and not very flexible, I would prov
 
 ### 4. Logging/Tracing
 
-I do some crude `println!`, which I would not have in a production system. Some sort of tracing/logging library would be a better choice, with multiple level's of logs.
+I do some crude `println!`, which I would not have in a production system. Some sort of tracing/logging library would be a better choice, with multiple levels of logs.
 
 ![Better Design](/docs/version_2.jpg)
